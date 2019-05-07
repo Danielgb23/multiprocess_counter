@@ -73,7 +73,7 @@ int main() {
 		//espera ate liberar algum processo se houverem 4 processos funcionando
 		while(*num_filhos>=4);
 		//faz um filho e contribui para o aumento do trabalho infantil colocando ele para verificar se *numero é primo
-		*num_filhos++;		//incrementa a quantidade de filhos
+		(*num_filhos)++;		//incrementa a quantidade de filhos
 
 		*continua=1;
 		//concebe uma nova crianca no seu computador
@@ -83,8 +83,8 @@ int main() {
 			*continua=0;//o pai pode continuar porque o filho já recebeu o numero
 			if(isprimo(num))		//se primo incrementa o contador
 				(*contador)++;		
-			//printf("num=%u pid=%d contador=%d\n", num, filho, *contador);
-			num_filhos--;		//decrementa a quantidade de filhos
+			//printf("num=%u pid=%d contador=%d num_filhos=%d\n", num, filho, *contador, *num_filhos);
+			(*num_filhos)--;		//decrementa a quantidade de filhos
 			exit(EXIT_SUCCESS);
 		}
 
