@@ -8,10 +8,12 @@
 
 
 
-int isprimo(int num){
-	int i=2;
+int isprimo(unsigned int num){
+	unsigned int i=2;
 	if(num<2)
 		return 0;
+	if(num==2)
+		return 2;
 	for (; i<= num/2; i++){
 		if(num %i ==0)
 			return 0;
@@ -19,16 +21,12 @@ int isprimo(int num){
 	return 1;
 }
 
-//void processo_isprimo(pid_t filho[4], int j, int *num, ){
-//}
-
 int main() {
 
-	pid_t filho;
+	pid_t filho, wpid;
 	int protection = PROT_READ | PROT_WRITE;
 	int visibility = MAP_SHARED | MAP_ANON;
-	int pipefd[2];
-	pipe(pipefd);
+
 
 	/* Criar area de memoria compartilhada */
 	int *contador;
@@ -36,17 +34,23 @@ int main() {
 	if (contador==(int*)-1) printf("Erro de alocacao!\n");
 	*contador=0;
 
-
-	int *numero;
-	numero = (int*) mmap(NULL, sizeof(int), protection, visibility, 0, 0);
-	if (numero==(int*)-1) printf("Erro de alocacao!\n");
+	//endereco para o numero a ser passado do pai para os filhos
+	unsigned int *numero;
+	numero = (unsigned int*) mmap(NULL, sizeof(unsigned int), protection, visibility, 0, 0);
+	if (numero==(unsigned int*)-1) printf("Erro de alocacao!\n");
 	*numero=0;
 
+	//flag compartilhada que conta filhos
 	int *num_filhos;
 	num_filhos = (int*) mmap(NULL, sizeof(int), protection, visibility, 0, 0);
 	if (num_filhos==(int*)-1) printf("Erro de alocacao!\n");
 	*num_filhos=0;
 
+	//flag compartilhada para continuar o programa
+	int *continua;
+	continua = (int*) mmap(NULL, sizeof(int), protection, visibility, 0, 0);
+	if (continua==(int*)-1) printf("Erro de alocacao!\n");
+	*continua=0;
 
 	int i,j;
 	char c=0, s[100];
@@ -61,12 +65,9 @@ int main() {
 			i++;
 			scanf("%c", &c);
 		}
-		s[i+1]='\0';
+		s[i]='\0';
 		*numero=atoi(s);
-		printf("pai num=%d, i=%d\n",*numero, *num_filhos);
-		//	close(pipefd[0]);
-		//	write(pipefd[1], &numero, 4);
-		//	close(pipefd[1]);
+		//printf("pai num=%u, i=%d\n",*numero, *num_filhos);
 
 
 		//espera ate liberar algum processo se houverem 4 processos funcionando
@@ -74,23 +75,23 @@ int main() {
 		//faz um filho e contribui para o aumento do trabalho infantil colocando ele para verificar se *numero é primo
 		*num_filhos++;		//incrementa a quantidade de filhos
 
+		*continua=1;
+		//concebe uma nova crianca no seu computador
 		filho = fork();
 		if (filho==0) {
-			//int num;
-			//close(pipefd[1]);
-			//read(pipefd[0], &num, 1);
-			printf("num=%d pid=%d\n", *numero, filho);
-			if(isprimo(*numero))
-				*contador++;		
-			printf("contador=%d\n", *contador);
+			int num=*numero;
+			*continua=0;//o pai pode continuar porque o filho já recebeu o numero
+			if(isprimo(num))		//se primo incrementa o contador
+				(*contador)++;		
+			//printf("num=%u pid=%d contador=%d\n", num, filho, *contador);
 			num_filhos--;		//decrementa a quantidade de filhos
 			exit(EXIT_SUCCESS);
 		}
-		waitpid(filho, NULL, 0);
 
-
+		while(*continua);//espera o ultimo filho concebido receber o numero
 
 	}
+	while((wpid=waitpid(-1, NULL,0) > 0));//espera todas as criancas
 	printf("%d\n", *contador);
 
 
